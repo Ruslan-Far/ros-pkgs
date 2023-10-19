@@ -41,7 +41,7 @@ void	reset_speed(geometry_msgs::Twist *msg)
 
 int main(int argc, char **argv)
 {
-    const double FORWARD_SPEED_MPS = 0.5;
+    const double FORWARD_SPEED_MPS = 3.0;
 
 	const double X_DISTANCE = 3.0;
 
@@ -59,11 +59,11 @@ int main(int argc, char **argv)
 
 	reset_speed(&msg);
 
-    ros::Rate rate(100);
+    ros::Rate rate(300);
 	
     ROS_INFO("Start");
 
-    while (ros::ok())
+    while (ros::ok() && start < 8)
     {
 		// 1
 		if (start == 1 && (abs(x_lin_pose_current - x_lin_pose_start) < X_DISTANCE))
@@ -146,12 +146,15 @@ int main(int argc, char **argv)
 		{
 			update_pose_start();
 			reset_speed(&msg);
-			break;
+			start = 8;
 		}
     	pub.publish(msg);
     	ros::spinOnce();
     	rate.sleep();
     }
+
+	msg.linear.x = X_DISTANCE / 3.0;
+	pub.publish(msg);
 
     ROS_INFO("End");
 

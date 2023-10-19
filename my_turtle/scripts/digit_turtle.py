@@ -48,7 +48,7 @@ def digit_turtle():
 
 	global start
 
-	FORWARD_SPEED_MPS: Final = 0.5
+	FORWARD_SPEED_MPS: Final = 3.0
 
 	X_DISTANCE: Final = 3.0
 
@@ -63,7 +63,7 @@ def digit_turtle():
 
 	rospy.loginfo("Start")
 
-	while not rospy.is_shutdown():
+	while not rospy.is_shutdown() and start < 8:
 		# 1
 		if (start == 1 and (abs(x_lin_pose_current - x_lin_pose_start) < X_DISTANCE)):
 			msg.linear.x = FORWARD_SPEED_MPS
@@ -118,9 +118,12 @@ def digit_turtle():
 		elif (start == 7 and not (abs(x_lin_pose_current - x_lin_pose_start) < 2.0 * X_DISTANCE / 3.0)):
 			update_pose_start()
 			reset_speed(msg)
-			break
+			start = 8
 		pub.publish(msg)
 		rate.sleep()
+
+	msg.linear.x = X_DISTANCE / 3.0
+	pub.publish(msg)
 
 	rospy.loginfo("End")
 
