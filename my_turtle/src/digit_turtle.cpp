@@ -11,7 +11,7 @@ static double z_ang_pose_start;
 static double x_lin_pose_current;
 static double z_ang_pose_current;
 
-void poseCallback(const turtlesim::PoseConstPtr& msg)
+void pose_callback(const turtlesim::PoseConstPtr& msg)
 {
 	if (start == 0) {
 		x_lin_pose_start = msg->x;
@@ -53,7 +53,7 @@ int main(int argc, char **argv)
 
     ros::Publisher pub = node.advertise<geometry_msgs::Twist>("turtle1/cmd_vel", 10);
 
-    ros::Subscriber sub = node.subscribe("turtle1/pose", 10, poseCallback);
+    ros::Subscriber sub = node.subscribe("turtle1/pose", 10, pose_callback);
 
     geometry_msgs::Twist msg;
 

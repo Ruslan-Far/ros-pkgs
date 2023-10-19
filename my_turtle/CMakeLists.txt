@@ -166,6 +166,7 @@ target_link_libraries(digit_turtle
 catkin_install_python(PROGRAMS
   scripts/move_turtle.py
   scripts/move_turtle_get_pose_param.py
+  scripts/digit_turtle.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
