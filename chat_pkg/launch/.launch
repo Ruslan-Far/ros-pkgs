@@ -1,0 +1,5 @@
+<launch>
+	<node name="talker1" pkg="chat_pkg" type="talker.py" output="screen"/>
+	<node name="talker2" pkg="chat_pkg" type="talker" output="screen"/>
+	<node name="listener" pkg="chat_pkg" type="listener" output="screen"/>
+</launch>
