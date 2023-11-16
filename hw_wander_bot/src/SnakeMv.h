@@ -1,9 +1,11 @@
 #ifndef SNAKEMV_H
-# define SNAKEMV_H
+#define SNAKEMV_H
 
-# include "ros/ros.h"
-# include "sensor_msgs/LaserScan.h"
-# include "geometry_msgs/Twist.h"
+#include "ros/ros.h"
+#include "sensor_msgs/LaserScan.h"
+#include "geometry_msgs/Twist.h"
+#include "gazebo_msgs/ModelStates.h"
+#include <cmath>
 
 class SnakeMv {
 public:
@@ -18,16 +20,16 @@ public:
 private:
   ros::NodeHandle node;
   ros::Publisher commandPub;
-  ros::Subcriber commandSub;
+  ros::Subscriber modelStatesSub;
   ros::Subscriber laserSub;
   bool isObstacle;
-  int numRotate;
   bool isAfterOddRotate;
+  int numRotate;
 
   void moveForward();
   void moveAngle(bool direction);
   void stop();
-  void poseCallback(const turtlesim::PoseConstPtr& msg)
+  void modelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr& modelStates);
   void scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
 };
 
