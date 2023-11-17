@@ -1,0 +1,22 @@
+вроде как идеальные параметры
+1.
+  static constexpr double LINEAR_SPEED = 0.1;
+  static constexpr double ANGULAR_SPEED = 0.1;
+  double anglesRotation[2]{-0.7, 0.001};
+  double auxiliaryAnglesRotation[1]{-0.001};
+
+    cmdVelPub = node.advertise<geometry_msgs::Twist>("/cmd_vel", 10);
+	modelStatesSub = node.subscribe("/gazebo/model_states", 10, &SnakeMv::modelStatesCallback, this);
+    scanSub = node.subscribe("/scan", 1, &SnakeMv::scanCallback, this);
+
+		if (numRotation == 0 && curAngRot < anglesRotation[0])
+			updateFieldsRotations();
+		else if (numRotation == 1 && curAuxAngRot < auxiliaryAnglesRotation[0])
+			updateFieldsRotations();
+		else if (numRotation == 2 && curAngRot > anglesRotation[0])
+			updateFieldsRotations();
+		else if (numRotation == 3 && curAngRot > anglesRotation[1])
+			updateFieldsRotations();
+
+    ros::Rate rate(500);
+	
