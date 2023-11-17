@@ -8,13 +8,15 @@
 #include "gazebo_msgs/ModelStates.h"
 #include "rosgraph_msgs/Clock.h"
 #include <cmath>
+#include <unistd.h>
 
 class SnakeMv {
 public:
-  static constexpr double SPEED = 0.1;
+  static constexpr double LINEAR_SPEED = 0.1;
+  static constexpr double ANGULAR_SPEED = 0.1;
   static constexpr double MIN_SCAN_ANGLE = M_PI + (-40.0 / 180 * M_PI);
   static constexpr double MAX_SCAN_ANGLE = M_PI + (40.0 / 180 * M_PI);
-  static constexpr double ANGLE_ROTATION = M_PI / 2.0;
+//   static constexpr double ANGLE_ROTATION = M_PI / 2.0;
   static constexpr float MIN_DIST_FROM_OBSTACLE = 0.4f;
   static constexpr float DIST_SHORT_SIDE = 0.5f;
   SnakeMv();
@@ -31,9 +33,9 @@ private:
   bool isAfterOddRotation;
   bool flagTime;
   bool isRotation;
-//   bool scanResolutionForMv;
   int numRotation;
   double startTime;
+  double anglesRotation[4]{0.7, 0.999, -0.7, -0.001};
 
   void moveLinear();
   void moveAngular(bool direction);

@@ -7,7 +7,6 @@ SnakeMv::SnakeMv()
 	isRotation = false;
 	isAfterOddRotation = false;
 	flagTime = true;
-	// scanResolutionForMv = false;
 	numRotation = 0;
 	startTime = 0.0;
 
@@ -25,16 +24,16 @@ SnakeMv::SnakeMv()
 
 void SnakeMv::moveLinear() {
     geometry_msgs::Twist msg;
-    msg.linear.x = (-1) * SPEED;
+    msg.linear.x = (-1) * LINEAR_SPEED;
     cmdVelPub.publish(msg);
 }
 
 void SnakeMv::moveAngular(bool direction) {
     geometry_msgs::Twist msg;
 	if (direction)
-    	msg.angular.z = SPEED;
+    	msg.angular.z = ANGULAR_SPEED;
 	else
-		msg.angular.z = (-1) * SPEED;
+		msg.angular.z = (-1) * ANGULAR_SPEED;
     cmdVelPub.publish(msg);
 }
 
@@ -44,6 +43,7 @@ void SnakeMv::stop() {
 	msg.linear.x = 0.0;
 	msg.angular.z = 0.0;
 	cmdVelPub.publish(msg);
+	// sleep(2);
 }
 
 void SnakeMv::setModelState()
@@ -70,6 +70,24 @@ void SnakeMv::setModelState2()
 
 void SnakeMv::modelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr& modelStates)
 {
+	if (isRotation)
+	{
+		ROS_INFO("currentAngleRotation = %f", modelStates->pose[2].orientation.z);
+		ROS_INFO("WcurrentAngleRotation = %f", modelStates->pose[2].orientation.w);
+		double currentAngleRotation = abs(modelStates->pose[2].orientation.z);
+		if (numRotation > 1)
+			currentAngleRotation = -currentAngleRotation;
+		if (currentAngleRotation > anglesRotation[numRotation])
+		{
+			ROS_INFO("modelStatesCallback isRotation");
+			stop();
+			if (numRotation % 2 == 0)
+				isAfterOddRotation = true;
+			numRotation = (numRotation + 1) % 4;
+			isRotation = false;
+			flagTime = true;
+		}
+	}
 	// if (isObstacle)
 	// {
 	// 	double rotZ = modelStates->pose[2].orientation.z;
@@ -117,7 +135,6 @@ void SnakeMv::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 			ROS_INFO("scanCallback isObstacle");
 			stop();
 			isRotation = true;
-			// isObstacle = true;
 			isAfterOddRotation = false;
 			flagTime = true;
 		}
@@ -142,40 +159,40 @@ void SnakeMv::initStartTime(const rosgraph_msgs::Clock::ConstPtr& clock)
 
 void SnakeMv::clockCallback(const rosgraph_msgs::Clock::ConstPtr& clock)
 {
-	if (isRotation)
-	{
-		initStartTime(clock);
-		if (getCurrentTime(clock) - startTime >= ANGLE_ROTATION / SPEED)
-		{
-			ROS_INFO("clockCallback isRotation");
-			stop();
-			if (numRotation % 2 == 0)
-				isAfterOddRotation = true;
-			numRotation = (numRotation + 1) % 4;
-			// isObstacle = false;
-			isRotation = false;
-			flagTime = true;
-		}
-	}
-	else if (isAfterOddRotation)
-	{
-		ROS_INFO("99999999999999999999999999999999999999999999");
-		initStartTime(clock);
-		if (getCurrentTime(clock) - startTime >= DIST_SHORT_SIDE / SPEED)
-		{
-			ROS_INFO("clockCallback isAfterOddRotation");
-			stop();
-			// isObstacle = true;
-			isRotation = true;
-			isAfterOddRotation = false;
-			flagTime = true;
-		}
-	}
+	// if (isRotation)
+	// {
+	// 	initStartTime(clock);
+	// 	if (getCurrentTime(clock) - startTime >= ANGLE_ROTATION / SPEED)
+	// 	{
+	// 		ROS_INFO("clockCallback isRotation");
+	// 		stop();
+	// 		if (numRotation % 2 == 0)
+	// 			isAfterOddRotation = true;
+	// 		numRotation = (numRotation + 1) % 4;
+	// 		isRotation = false;
+	// 		flagTime = true;
+	// 	}
+	// }
+	// else if (isAfterOddRotation)
+	// {
+	// 	ROS_INFO("99999999999999999999999999999999999999999999");
+	// 	initStartTime(clock);
+	// 	if (getCurrentTime(clock) - startTime >= DIST_SHORT_SIDE / SPEED)
+	// 	{
+	// 		ROS_INFO("clockCallback isAfterOddRotation");
+	// 		stop();
+	// 		isRotation = true;
+	// 		isAfterOddRotation = false;
+	// 		flagTime = true;
+	// 	}
+	// }
 }
 
 void SnakeMv::startMoving()
 {
-    ros::Rate rate(300);
+    // ros::Rate rate(10);
+	// isRotation = true;
+    ros::Rate rate(1000);
     ROS_INFO("Start moving");
     while (ros::ok()) {
 		if (!isObstacle && !isRotation)
@@ -188,6 +205,7 @@ void SnakeMv::startMoving()
 			else
 				moveAngular(true);
 		}
+		// moveAngular(false);
         ros::spinOnce();
         rate.sleep();
     }
