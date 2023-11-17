@@ -30,7 +30,8 @@ private:
   bool isObstacle;
   bool isAfterOddRotation;
   bool flagTime;
-  bool scanResolutionForMv;
+  bool isRotation;
+//   bool scanResolutionForMv;
   int numRotation;
   double startTime;
 

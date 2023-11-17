@@ -4,9 +4,10 @@ SnakeMv::SnakeMv()
 {
 
 	isObstacle = true;
+	isRotation = false;
 	isAfterOddRotation = false;
 	flagTime = true;
-	scanResolutionForMv = false;
+	// scanResolutionForMv = false;
 	numRotation = 0;
 	startTime = 0.0;
 
@@ -110,17 +111,19 @@ void SnakeMv::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
     }
 
     if (isObstacleInFront) {
-		scanResolutionForMv = false;
-		if (!isObstacle)
+		isObstacle = true;
+		if (!isRotation)
 		{
 			ROS_INFO("scanCallback isObstacle");
 			stop();
-			isObstacle = true;
+			isRotation = true;
+			// isObstacle = true;
 			isAfterOddRotation = false;
+			flagTime = true;
 		}
     }
 	else
-		scanResolutionForMv = true;
+		isObstacle = false;
 }
 
 double SnakeMv::getCurrentTime(const rosgraph_msgs::Clock::ConstPtr& clock)
@@ -139,28 +142,31 @@ void SnakeMv::initStartTime(const rosgraph_msgs::Clock::ConstPtr& clock)
 
 void SnakeMv::clockCallback(const rosgraph_msgs::Clock::ConstPtr& clock)
 {
-	if (isObstacle)
+	if (isRotation)
 	{
 		initStartTime(clock);
 		if (getCurrentTime(clock) - startTime >= ANGLE_ROTATION / SPEED)
 		{
-			ROS_INFO("clockCallback isObstacle");
+			ROS_INFO("clockCallback isRotation");
 			stop();
 			if (numRotation % 2 == 0)
 				isAfterOddRotation = true;
 			numRotation = (numRotation + 1) % 4;
-			isObstacle = false;
+			// isObstacle = false;
+			isRotation = false;
 			flagTime = true;
 		}
 	}
 	else if (isAfterOddRotation)
 	{
+		ROS_INFO("99999999999999999999999999999999999999999999");
 		initStartTime(clock);
 		if (getCurrentTime(clock) - startTime >= DIST_SHORT_SIDE / SPEED)
 		{
 			ROS_INFO("clockCallback isAfterOddRotation");
 			stop();
-			isObstacle = true;
+			// isObstacle = true;
+			isRotation = true;
 			isAfterOddRotation = false;
 			flagTime = true;
 		}
@@ -172,10 +178,11 @@ void SnakeMv::startMoving()
     ros::Rate rate(300);
     ROS_INFO("Start moving");
     while (ros::ok()) {
-		if (!isObstacle)
+		if (!isObstacle && !isRotation)
         	moveLinear();
-		else
+		else if (isRotation)
 		{
+			ROS_INFO("numRotation = %d", numRotation);
 			if (numRotation < 2)
 				moveAngular(false);
 			else
