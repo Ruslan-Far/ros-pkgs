@@ -10,6 +10,13 @@ SnakeMv::SnakeMv()
 	startPositionX = 0.0;
 	startPositionY = 0.0;
 
+
+
+
+
+	flagOrient = false;
+	startOrient = 0.0;
+
     cmdVelPub = node.advertise<geometry_msgs::Twist>("/cmd_vel", 1000);
 
 	modelStatesSub = node.subscribe("/gazebo/model_states", 1, &SnakeMv::modelStatesCallback, this);
@@ -69,18 +76,36 @@ void SnakeMv::updateRotations()
 
 void SnakeMv::modelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr& modelStates)
 {
+	ROS_INFO("curOrient = %f", getCurOrient(modelStates));
+	// if (isRotation)
+	// {
+	// 	double curAngRot = modelStates->pose[2].orientation.z;
+	// 	double curAuxAngRot = modelStates->pose[2].orientation.w;
+
+	// 	if (numRotation == 0 && curAngRot < ANGS_ROT[0])
+	// 		updateRotations();
+	// 	else if (numRotation == 1 && curAuxAngRot < AUX_ANGS_ROT[0])
+	// 		updateRotations();
+	// 	else if (numRotation == 2 && curAngRot > ANGS_ROT[0])
+	// 		updateRotations();
+	// 	else if (numRotation == 3 && curAngRot > ANGS_ROT[1])
+	// 		updateRotations();
+	// }
 	if (isRotation)
 	{
-		double curAngRot = modelStates->pose[2].orientation.z;
-		double curAuxAngRot = modelStates->pose[2].orientation.w;
+		initStartOrient(modelStates);
+		double curOrient = getCurOrient(modelStates);
+		double deltaOrient = abs(abs(curOrient) - abs(startOrient));
 
-		if (numRotation == 0 && curAngRot < ANGS_ROT[0])
+		if (curOrient >= 0 && startOrient <= 0 || curOrient <= 0 && startOrient >= 0)
+			deltaOrient = 360.0 - deltaOrient;
+		if (numRotation == 0 && deltaOrient >= ORIENTS[0])
 			updateRotations();
-		else if (numRotation == 1 && curAuxAngRot < AUX_ANGS_ROT[0])
+		else if (numRotation == 1 && deltaOrient >= ORIENTS[0])
 			updateRotations();
-		else if (numRotation == 2 && curAngRot > ANGS_ROT[0])
+		else if (numRotation == 2 && deltaOrient >= ORIENTS[0])
 			updateRotations();
-		else if (numRotation == 3 && curAngRot > ANGS_ROT[1])
+		else if (numRotation == 3 && deltaOrient >= ORIENTS[0])
 			updateRotations();
 	}
 	else if (isAfterOddRotation)
@@ -94,6 +119,7 @@ void SnakeMv::modelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr& mode
 		{
 			ROS_INFO("modelStatesCallback isAfterOddRotation");
 			stop();
+			flagOrient = true;
 			isRotation = true;
 			isAfterOddRotation = false;
 		}
@@ -108,7 +134,7 @@ void SnakeMv::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 
     for (int currIndex = minIndex + 1; currIndex <= maxIndex; currIndex++)
 	{
-        if (scan->ranges[currIndex] < MIN_DIST_FROM_OBSTACLE)
+        if (scan->ranges[currIndex] <= MIN_DIST_FROM_OBSTACLE)
 		{
             isObstacleInFront = true;
             break;
@@ -124,6 +150,7 @@ void SnakeMv::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 			isRotation = true;
 			isAfterOddRotation = false;
 			flagPosition = true;
+			flagOrient = true;
 		}
     }
 	else
@@ -146,7 +173,51 @@ void SnakeMv::startMoving()
 			else
 				moveAngular(true);
 		}
+		// moveAngular(true);
         ros::spinOnce();
         rate.sleep();
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+void SnakeMv::initStartOrient(const gazebo_msgs::ModelStates::ConstPtr& modelStates)
+{
+	if (flagOrient)
+	{
+		startOrient = getCurOrient(modelStates);
+		flagOrient = false;
+	}
+}
+
+double SnakeMv::getCurOrient(const gazebo_msgs::ModelStates::ConstPtr& modelStates)
+{
+	double z = modelStates->pose[2].orientation.z;
+	double w = modelStates->pose[2].orientation.w;
+	double curOrient;
+
+	if (z <= 0 && w >= 0 || z > 0 && w < 0)
+	{
+		curOrient = abs(2.0 * asin(z)) * 180.0 / M_PI;
+		if (z > 0 && w < 0)
+			curOrient = -curOrient;
+	}
+	else
+	{
+		curOrient = (M_PI + abs(2.0 * asin(w))) * 180.0 / M_PI;
+		if (z > 0 && w >= 0)
+			curOrient = -curOrient;
+	}
+	return curOrient;
+}
+
