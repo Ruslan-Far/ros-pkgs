@@ -6,6 +6,7 @@
 #include "geometry_msgs/Twist.h"
 #include "gazebo_msgs/ModelStates.h"
 #include <cmath>
+#include <unistd.h>
 
 class SnakeMv {
 public:

@@ -20,3 +20,72 @@
 
     ros::Rate rate(500);
 	
+
+
+2.
+  static constexpr double LINEAR_SPEED = 0.1;
+  static constexpr double ANGULAR_SPEED = 0.1;
+  static constexpr double ANGS_ROT[2]{-0.7, 0.001};
+  static constexpr double AUX_ANGS_ROT[1]{-0.001};
+
+      cmdVelPub = node.advertise<geometry_msgs::Twist>("/cmd_vel", 10);
+
+	modelStatesSub = node.subscribe("/gazebo/model_states", 1, &SnakeMv::modelStatesCallback, this);
+
+    scanSub = node.subscribe("/scan", 1, &SnakeMv::scanCallback, this);
+
+    ros::Rate rate(500);
+
+
+
+3.
+  static constexpr double LINEAR_SPEED = 0.1;
+  static constexpr double ANGULAR_SPEED = 0.1;
+  static constexpr double ANGS_ROT[2]{-0.7, 0.001};
+  static constexpr double AUX_ANGS_ROT[1]{-0.001};
+
+      cmdVelPub = node.advertise<geometry_msgs::Twist>("/cmd_vel", 10);
+
+	modelStatesSub = node.subscribe("/gazebo/model_states", 1, &SnakeMv::modelStatesCallback, this);
+
+    scanSub = node.subscribe("/scan", 1, &SnakeMv::scanCallback, this);
+
+    ros::Rate rate(5000);
+
+
+
+4.
+  static constexpr double LINEAR_SPEED = 0.1;
+  static constexpr double ANGULAR_SPEED = 0.1;
+  static constexpr double ANGS_ROT[2]{-0.7, 0.001};
+  static constexpr double AUX_ANGS_ROT[1]{-0.001};
+
+      cmdVelPub = node.advertise<geometry_msgs::Twist>("/cmd_vel", 1000);
+
+	modelStatesSub = node.subscribe("/gazebo/model_states", 1, &SnakeMv::modelStatesCallback, this);
+
+    scanSub = node.subscribe("/scan", 1, &SnakeMv::scanCallback, this);
+
+    ros::Rate rate(5000);
+
+
+5.
+  static constexpr double LINEAR_SPEED = 0.1;
+  static constexpr double ANGULAR_SPEED = 0.1;
+  static constexpr double ANGS_ROT[2]{-0.7, 0.001};
+  static constexpr double AUX_ANGS_ROT[1]{-0.001};
+
+      cmdVelPub = node.advertise<geometry_msgs::Twist>("/cmd_vel", 1000);
+
+	modelStatesSub = node.subscribe("/gazebo/model_states", 1, &SnakeMv::modelStatesCallback, this);
+
+    scanSub = node.subscribe("/scan", 1, &SnakeMv::scanCallback, this);
+
+    ros::Rate rate(5000);
+
+	добавил sleep(2);
+
+
+
+6. Возможно потом сделаю так для 3 поворота:
+	static constexpr double ANGS_ROT[2]{-0.7, -0.714, 0.001};
