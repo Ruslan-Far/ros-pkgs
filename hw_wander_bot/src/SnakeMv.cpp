@@ -2,30 +2,33 @@
 
 SnakeMv::SnakeMv()
 {
-
 	isObstacle = true;
 	isRotation = false;
 	isAfterOddRotation = false;
-	flagTime = true; // можно сделать false
+	flagPosition = false;
 	numRotation = 0;
-	startTime = 0.0;
+	startPositionX = 0.0;
+	startPositionY = 0.0;
 
     cmdVelPub = node.advertise<geometry_msgs::Twist>("/cmd_vel", 10);
 
 	modelStatesSub = node.subscribe("/gazebo/model_states", 10, &SnakeMv::modelStatesCallback, this);
 
     scanSub = node.subscribe("/scan", 1, &SnakeMv::scanCallback, this);
-
 }
 
-void SnakeMv::moveLinear() {
+void SnakeMv::moveLinear()
+{
     geometry_msgs::Twist msg;
+
     msg.linear.x = (-1) * LINEAR_SPEED;
     cmdVelPub.publish(msg);
 }
 
-void SnakeMv::moveAngular(bool direction) {
+void SnakeMv::moveAngular(bool direction)
+{
     geometry_msgs::Twist msg;
+
 	if (direction)
     	msg.angular.z = ANGULAR_SPEED;
 	else
@@ -33,15 +36,27 @@ void SnakeMv::moveAngular(bool direction) {
     cmdVelPub.publish(msg);
 }
 
-void SnakeMv::stop() {
+void SnakeMv::stop()
+{
     ROS_INFO("Stop!");
 	geometry_msgs::Twist msg;
+	
 	msg.linear.x = 0.0;
 	msg.angular.z = 0.0;
 	cmdVelPub.publish(msg);
 }
 
-void SnakeMv::updateFieldsRotations()
+void SnakeMv::initStartPositionXY(const gazebo_msgs::ModelStates::ConstPtr& modelStates)
+{
+	if (flagPosition)
+	{
+		startPositionX = modelStates->pose[2].position.x;
+		startPositionY = modelStates->pose[2].position.y;
+		flagPosition = false;
+	}
+}
+
+void SnakeMv::updateRotations()
 {
 	ROS_INFO("modelStatesCallback isRotation");
 	stop();
@@ -49,7 +64,6 @@ void SnakeMv::updateFieldsRotations()
 		isAfterOddRotation = true;
 	numRotation = (numRotation + 1) % 4;
 	isRotation = false;
-	flagTime = true; // можно убрать
 }
 
 void SnakeMv::modelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr& modelStates)
@@ -60,57 +74,37 @@ void SnakeMv::modelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr& mode
 		ROS_INFO("currentAuxiliaryAngleRotation = %f", modelStates->pose[2].orientation.w);
 		double curAngRot = modelStates->pose[2].orientation.z;
 		double curAuxAngRot = modelStates->pose[2].orientation.w;
-		// if (numRotation > 1)
-		// 	curAngRot = -curAngRot;
-		// if (curAngRot > anglesRotation[numRotation] || curAuxAngRot > auxiliaryAnglesRotation[numRotation])
-		// {
-		// 	ROS_INFO("modelStatesCallback isRotation");
-		// 	stop();
-		// 	if (numRotation % 2 == 0)
-		// 		isAfterOddRotation = true;
-		// 	numRotation = (numRotation + 1) % 4;
-		// 	isRotation = false;
-		// 	flagTime = true;
-		// }
-		if (numRotation == 0 && curAngRot < anglesRotation[0])
-			updateFieldsRotations();
-		else if (numRotation == 1 && curAuxAngRot < auxiliaryAnglesRotation[0])
-			updateFieldsRotations();
-		else if (numRotation == 2 && curAngRot > anglesRotation[0])
-			updateFieldsRotations();
-		else if (numRotation == 3 && curAngRot > anglesRotation[1])
-			updateFieldsRotations();
+
+		if (numRotation == 0 && curAngRot < ANGS_ROT[0])
+			updateRotations();
+		else if (numRotation == 1 && curAuxAngRot < AUX_ANGS_ROT[0])
+			updateRotations();
+		else if (numRotation == 2 && curAngRot > ANGS_ROT[0])
+			updateRotations();
+		else if (numRotation == 3 && curAngRot > ANGS_ROT[1])
+			updateRotations();
 	}
-	// if (isObstacle)
-	// {
-	// 	double rotZ = modelStates->pose[2].orientation.z;
-	// 	ROS_INFO("rotZ = %f", rotZ);
-	// 	if (abs(rotZ) >= 0.707)
-	// 	{
-	// 		stop();
-	// 		if (numRotation % 2 == 0)
-	// 			isAfterOddRotation = true;
-	// 		numRotation = (numRotation + 1) % 4;
-	// 		isObstacle = false;
-	// 	}
-	// }
-	// else if (isAfterOddRotation)
-	// {
-	// 	double distX = modelStates->pose[2].position.x;
-	// 	ROS_INFO("distX = %f", distX);
-	// 	if (distX > DIST_SHORT_SIDE)
-	// 	{
-	// 		stop();
-	// 		isObstacle = true;
-	// 		isAfterOddRotation = false;
-	// 	}
-	// }
+	else if (isAfterOddRotation)
+	{
+		ROS_INFO("99999999999999999999999999999999999999999999");
+		initStartPositionXY(modelStates);
+		double currentPositionX = modelStates->pose[2].position.x;
+		double currentPositionY = modelStates->pose[2].position.y;
+		double currentDistShortSide = sqrt(pow(currentPositionX - startPositionX, 2.0) + pow(currentPositionY - startPositionY, 2.0));
+		
+		if (currentDistShortSide >= DIST_SHORT_SIDE)
+		{
+			ROS_INFO("modelStatesCallback isAfterOddRotation");
+			stop();
+			isRotation = true;
+			isAfterOddRotation = false;
+		}
+	}
 }
 
 void SnakeMv::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 {
     bool isObstacleInFront = false;
-
     int minIndex = ceil((MIN_SCAN_ANGLE - scan->angle_min) / scan->angle_increment);
     int maxIndex = floor((MAX_SCAN_ANGLE - scan->angle_min) / scan->angle_increment);
 
@@ -120,7 +114,6 @@ void SnakeMv::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
             break;
         }
     }
-
     if (isObstacleInFront) {
 		isObstacle = true;
 		if (!isRotation)
@@ -129,25 +122,11 @@ void SnakeMv::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 			stop();
 			isRotation = true;
 			isAfterOddRotation = false;
-			flagTime = true;
+			flagPosition = true;
 		}
     }
 	else
 		isObstacle = false;
-}
-
-double SnakeMv::getCurrentTime(const rosgraph_msgs::Clock::ConstPtr& clock)
-{
-	return clock->clock.sec + clock->clock.nsec / 100000000.0;
-}
-
-void SnakeMv::initStartTime(const rosgraph_msgs::Clock::ConstPtr& clock)
-{
-	if (flagTime)
-	{
-		startTime = getCurrentTime(clock);
-		flagTime = false;
-	}
 }
 
 // void SnakeMv::clockCallback(const rosgraph_msgs::Clock::ConstPtr& clock)
@@ -184,6 +163,7 @@ void SnakeMv::initStartTime(const rosgraph_msgs::Clock::ConstPtr& clock)
 void SnakeMv::startMoving()
 {
     ros::Rate rate(500);
+
     ROS_INFO("Start moving");
     while (ros::ok()) {
 		if (!isObstacle && !isRotation)
