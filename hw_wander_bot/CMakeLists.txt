@@ -134,6 +134,7 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(snake_mv src/run_snake_mv.cpp src/SnakeMv.cpp)
+add_executable(free_space src/run_free_space.cpp src/FreeSpace.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -147,6 +148,9 @@ add_executable(snake_mv src/run_snake_mv.cpp src/SnakeMv.cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(snake_mv
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(free_space
   ${catkin_LIBRARIES}
 )
 
