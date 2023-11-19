@@ -97,6 +97,38 @@ void FreeSpace::modelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr& mo
 	}
 }
 
+void FreeSpace::setParamsTargetOrient(int targetIndexStart, int targetIndexEnd, int justIndex,
+											double maxRangeStart, double maxRangeEnd, bool flag)
+{
+	if (maxRangeStart == -1.0 && maxRangeEnd == -1.0)
+	{
+		if (!flag) // вообще нет inf
+			targetOrient = justIndex;
+		else // все есть inf
+			targetOrient = 180.0; // default orientation
+	}
+	else
+		targetOrient = (targetIndexStart + targetIndexEnd) / 2.0;
+	if (targetIndexStart >= targetIndexEnd) // если inf находится под индексом 0
+	{
+		targetOrient = targetOrient + 180.0;
+		if (targetOrient >= 360.0)
+			targetOrient -= 360.0;
+	}
+	if (targetOrient < 180.0)
+	{
+		targetOrient = 180.0 - targetOrient;
+		directionRotation = true;
+	}
+	else
+	{
+		targetOrient = 180.0 - (360.0 - targetOrient);
+		directionRotation = false;
+	}
+	flagOrient = true;
+	isRotation = true;
+}
+
 void FreeSpace::findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan)
 {
 	int indexStart;
@@ -105,13 +137,13 @@ void FreeSpace::findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan)
 	int targetIndexEnd;
 	int loopIndexStart;
 	int loopIndexEnd;
-	int justIndex; // для случая, если вообще не будет nan
+	int justIndex; // для случая, если вообще не будет inf
 	double rangeStart;
 	double rangeEnd;
 	double maxRangeStart;
 	double maxRangeEnd;
-	double justMax; // для случая, если вообще не будет nan
-	bool flag; // если нашли начало диапазона nan
+	double justMax; // для случая, если вообще не будет inf
+	bool flag; // если нашли начало диапазона inf
 
 	loopIndexStart = ceil(scan->angle_min / scan->angle_increment);
 	loopIndexEnd = floor(2.0 * M_PI / scan->angle_increment);
@@ -121,18 +153,38 @@ void FreeSpace::findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan)
 	maxRangeEnd = -1.0;
 	justMax = -1.0;
 	flag = false;
+	ROS_INFO("loopIndexStart = %d", loopIndexStart);
+	ROS_INFO("loopIndexEnd = %d", loopIndexEnd);
 	for (int i = loopIndexStart; i < loopIndexEnd; i++)
 	{
-		if (ranges[i] != nan && ranges[i] > justMax)
+		if (scan->ranges[i] >= scan->range_min && scan->ranges[i] <= scan->range_max && scan->ranges[i] > justMax)
 		{
 			justIndex = i;
-			justMax = ranges[justIndex];
+			justMax = scan->ranges[justIndex];
 		}
-		if (ranges[i] == nan)
+		if (!(scan->ranges[i] >= scan->range_min && scan->ranges[i] <= scan->range_max))
 		{
 			if (!flag)
 			{
 				indexStart = i - 1;
+				if (indexStart == -1)
+				{
+					for (int j = loopIndexEnd - 1; j > 0; j--)
+					{
+						if (scan->ranges[j] >= scan->range_min && scan->ranges[j] <= scan->range_max)
+						{
+							indexStart = j;
+							break;
+						}
+					}
+					if (indexStart == -1)
+					{
+						flag = true;
+						break;
+					}
+					else
+						loopIndexEnd -= (loopIndexEnd - indexStart);
+				}
 				rangeStart = scan->ranges[indexStart];
 				flag = true;
 			}
@@ -151,27 +203,7 @@ void FreeSpace::findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan)
 			flag = false;
 		}
 	}
-	if (maxRangeStart == -1.0 && maxRangeEnd = -1.0)
-	{
-		if (!flag) // вообще нет nan
-			targetOrient = justIndex;
-		else // все есть nan
-			targetOrient = 180.0 // default orientation
-	}
-	else
-		targetOrient = (targetIndexStart + targetIndexEnd) / 2.0;
-	if (targetOrient < 180.0)
-	{
-		targetOrient = 180.0 - targetOrient;
-		directionRotation = true;
-	}
-	else
-	{
-		targetOrient = 180.0 - (360.0 - targetOrient);
-		directionRotation = false;
-	}
-	flagOrient = true;
-	isRotation = true;
+	setParamsTargetOrient(targetIndexStart, targetIndexEnd, justIndex, maxRangeStart, maxRangeEnd, flag);
 }
 
 void FreeSpace::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
