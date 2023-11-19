@@ -4,12 +4,7 @@ FreeSpace::FreeSpace()
 {
 	isObstacle = true;
 	isRotation = false;
-	isAfterOddRotation = false;
-	flagPosition = false;
 	flagOrient = false;
-	numRotation = 0;
-	startPositionX = 0.0;
-	startPositionY = 0.0;
 	startOrient = 0.0;
 
     cmdVelPub = node.advertise<geometry_msgs::Twist>("/cmd_vel", 1000);
@@ -43,20 +38,10 @@ void FreeSpace::stop()
     ROS_INFO("Stop!");
 	geometry_msgs::Twist msg;
 
-	msg.linear.x = 0.0;
+	msg.linear.x = 0.0;// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	msg.angular.z = 0.0;
 	cmdVelPub.publish(msg);
 	sleep(2);
-}
-
-void FreeSpace::initStartPositionXY(const gazebo_msgs::ModelStates::ConstPtr& modelStates)
-{
-	if (flagPosition)
-	{
-		startPositionX = modelStates->pose[2].position.x;
-		startPositionY = modelStates->pose[2].position.y;
-		flagPosition = false;
-	}
 }
 
 void FreeSpace::initStartOrient(const gazebo_msgs::ModelStates::ConstPtr& modelStates)
@@ -104,27 +89,71 @@ void FreeSpace::modelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr& mo
 		{
 			ROS_INFO("modelStatesCallback isRotation");
 			stop();
-			if (numRotation % 2 == 0)
-				isAfterOddRotation = true;
-			numRotation = (numRotation + 1) % 4;
 			isRotation = false;
 		}
 	}
-	else if (isAfterOddRotation)
+}
+
+void FreeSpace::findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan)
+{
+	int indexStart;
+	int indexEnd;
+	int targetIndexStart;
+	int targetIndexEnd;
+	double rangeStart;
+	double rangeEnd;
+	double maxRangeStart;
+	double maxRangeEnd;
+	bool flag;
+
+	rangeStart = -1.0;
+	rangeEnd = -1.0;
+	maxRangeStart = -1.0;
+	maxRangeEnd = -1.0;
+	flag = true;
+	if (flagFreeSpace)
 	{
-		initStartPositionXY(modelStates);
-		double currentPositionX = modelStates->pose[2].position.x;
-		double currentPositionY = modelStates->pose[2].position.y;
-		double currentDistShortSide = sqrt(pow(currentPositionX - startPositionX, 2.0) + pow(currentPositionY - startPositionY, 2.0));
-		
-		if (currentDistShortSide >= DIST_SHORT_SIDE)
+		int loopStart = ceil(scan->angle_min / scan->angle_increment);
+		int loopEnd = floor(2.0 * M_PI / scan->angle_increment);
+		for (int i = loopStart; i < loopEnd; i++)
 		{
-			ROS_INFO("modelStatesCallback isAfterOddRotation");
-			stop();
-			flagOrient = true;
-			isRotation = true;
-			isAfterOddRotation = false;
+			if (ranges[i] == nan)
+			{
+				if (flag)
+				{
+					indexStart = i - 1;
+					rangeStart = scan->ranges[indexStart];
+					flag = false;
+				}
+			}
+			else if (!flag)
+			{
+				indexEnd = i;
+				rangeEnd = scan->ranges[indexEnd];
+				if (rangeStart > maxRangeStart && rangeEnd > maxRangeEnd)
+				{
+					targetIndexStart = indexStart;
+					targetIndexEnd = indexEnd;
+					maxRangeStart = rangeStart;
+					maxRangeEnd = rangeEnd;
+				}
+				flag = true;
+			}
 		}
+		targetOrient = round((targetIndexStart + targetIndexEnd) / 2.0);
+		if (targetOrient < 180.0)
+		{
+			targetOrient = 180.0 - targetOrient;
+			directionRotation = true;
+		}
+		else
+		{
+			targetOrient = 180.0 - (360.0 - targetOrient);
+			directionRotation = false;
+		}
+		flagOrient = true;
+		isRotation = true;
+		flagFreeSpace = false;
 	}
 }
 
@@ -133,6 +162,8 @@ void FreeSpace::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
     bool isObstacleInFront = false;
     int minIndex = ceil((MIN_SCAN_ANGLE - scan->angle_min) / scan->angle_increment);
     int maxIndex = floor((MAX_SCAN_ANGLE - scan->angle_min) / scan->angle_increment);
+
+	findFreeSpace(scan);
 
     for (int currIndex = minIndex + 1; currIndex <= maxIndex; currIndex++)
 	{
@@ -149,10 +180,7 @@ void FreeSpace::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 		{
 			ROS_INFO("scanCallback isObstacle");
 			stop();
-			isRotation = true;
-			isAfterOddRotation = false;
-			flagPosition = true;
-			flagOrient = true;
+			findFreeSpace(scan);
 		}
     }
 	else
@@ -169,12 +197,7 @@ void FreeSpace::startMoving()
 		if (!isObstacle && !isRotation)
         	moveLinear();
 		else if (isRotation)
-		{
-			if (numRotation < 2)
-				moveAngular(false);
-			else
-				moveAngular(true);
-		}
+			moveAngular(directionRotation);
         ros::spinOnce();
         rate.sleep();
     }

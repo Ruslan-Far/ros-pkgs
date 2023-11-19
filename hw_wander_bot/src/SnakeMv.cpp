@@ -149,10 +149,10 @@ void SnakeMv::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 		{
 			ROS_INFO("scanCallback isObstacle");
 			stop();
+			flagOrient = true;
 			isRotation = true;
 			isAfterOddRotation = false;
 			flagPosition = true;
-			flagOrient = true;
 		}
     }
 	else
