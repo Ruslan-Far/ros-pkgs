@@ -105,13 +105,13 @@ void FreeSpace::findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan)
 	int targetIndexEnd;
 	int loopIndexStart;
 	int loopIndexEnd;
-	int justIndex;
+	int justIndex; // для случая, если вообще не будет nan
 	double rangeStart;
 	double rangeEnd;
 	double maxRangeStart;
 	double maxRangeEnd;
-	double justMax;
-	bool flag;
+	double justMax; // для случая, если вообще не будет nan
+	bool flag; // если нашли начало диапазона nan
 
 	loopIndexStart = ceil(scan->angle_min / scan->angle_increment);
 	loopIndexEnd = floor(2.0 * M_PI / scan->angle_increment);
@@ -120,24 +120,24 @@ void FreeSpace::findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan)
 	maxRangeStart = -1.0;
 	maxRangeEnd = -1.0;
 	justMax = -1.0;
-	flag = true;
+	flag = false;
 	for (int i = loopIndexStart; i < loopIndexEnd; i++)
 	{
-		if (ranges[i] > justMax)
+		if (ranges[i] != nan && ranges[i] > justMax)
 		{
 			justIndex = i;
 			justMax = ranges[justIndex];
 		}
 		if (ranges[i] == nan)
 		{
-			if (flag)
+			if (!flag)
 			{
 				indexStart = i - 1;
 				rangeStart = scan->ranges[indexStart];
-				flag = false;
+				flag = true;
 			}
 		}
-		else if (!flag)
+		else if (flag)
 		{
 			indexEnd = i;
 			rangeEnd = scan->ranges[indexEnd];
@@ -148,11 +148,16 @@ void FreeSpace::findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan)
 				maxRangeStart = rangeStart;
 				maxRangeEnd = rangeEnd;
 			}
-			flag = true;
+			flag = false;
 		}
 	}
-	if (maxRangeStart == -1.0 || maxRangeEnd = -1.0)
-		targetOrient = justIndex;
+	if (maxRangeStart == -1.0 && maxRangeEnd = -1.0)
+	{
+		if (!flag) // вообще нет nan
+			targetOrient = justIndex;
+		else // все есть nan
+			targetOrient = 180.0 // default orientation
+	}
 	else
 		targetOrient = (targetIndexStart + targetIndexEnd) / 2.0;
 	if (targetOrient < 180.0)
