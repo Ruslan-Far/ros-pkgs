@@ -41,7 +41,11 @@ void FreeSpace::stop()
     ROS_INFO("Stop!");
 	geometry_msgs::Twist msg;
 
-	msg.linear.x = 0.0;// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	msg.linear.x = 0.0;
+	msg.linear.y = 0.0;
+	msg.linear.z = 0.0;
+	msg.angular.x = 0.0;
+	msg.angular.y = 0.0;
 	msg.angular.z = 0.0;
 	cmdVelPub.publish(msg);
 	sleep(2);
@@ -79,7 +83,6 @@ double FreeSpace::getCurOrient(const gazebo_msgs::ModelStates::ConstPtr& modelSt
 
 void FreeSpace::modelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr& modelStates)
 {
-	ROS_INFO("curOrient = %f", getCurOrient(modelStates));
 	if (isRotation)
 	{
 		initStartOrient(modelStates);
@@ -102,31 +105,48 @@ void FreeSpace::setParamsTargetOrient(int targetIndexStart, int targetIndexEnd, 
 {
 	if (maxRangeStart == -1.0 && maxRangeEnd == -1.0)
 	{
+		ROS_INFO("setParamsTargetOrient INF ЛИБО ЕСТЬ, ЛИБО НЕТ");
 		if (!flag) // вообще нет inf
+		{
 			targetOrient = justIndex;
+			ROS_INFO("setParamsTargetOrient ЕСТЬ");
+		}
 		else // все есть inf
-			targetOrient = 180.0; // default orientation
+		{
+			targetOrient = 180.0;
+			ROS_INFO("setParamsTargetOrient НЕТ");
+		} // default orientation
 	}
 	else
-		targetOrient = (targetIndexStart + targetIndexEnd) / 2.0;
-	if (targetIndexStart >= targetIndexEnd) // если inf находится под индексом 0
 	{
-		targetOrient = targetOrient + 180.0;
-		if (targetOrient >= 360.0)
-			targetOrient -= 360.0;
+		ROS_INFO("setParamsTargetOrient targetOrient = (targetIndexStart + targetIndexEnd) / 2.0;");
+		targetOrient = (targetIndexStart + targetIndexEnd) / 2.0;
+		if (targetIndexStart >= targetIndexEnd) // если inf находится под индексом 0
+		{
+			ROS_INFO("setParamsTargetOrient если inf находится под индексом 0");
+			targetOrient = targetOrient + 180.0;
+			if (targetOrient >= 360.0)
+				targetOrient -= 360.0;
+		}
 	}
 	if (targetOrient < 180.0)
 	{
 		targetOrient = 180.0 - targetOrient;
-		directionRotation = true;
+		directionRotation = false;
+		ROS_INFO("setParamsTargetOrient targetOrient = %f", targetOrient);
+		ROS_INFO("setParamsTargetOrient directionRotation = false");
 	}
 	else
 	{
 		targetOrient = 180.0 - (360.0 - targetOrient);
-		directionRotation = false;
+		directionRotation = true;
+		ROS_INFO("setParamsTargetOrient targetOrient = %f", targetOrient);
+		ROS_INFO("setParamsTargetOrient directionRotation = true");
 	}
 	flagOrient = true;
 	isRotation = true;
+	ROS_INFO("setParamsTargetOrient targetIndexStart = %d", targetIndexStart);
+	ROS_INFO("setParamsTargetOrient targetIndexEnd = %d", targetIndexEnd);
 }
 
 void FreeSpace::findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan)
@@ -145,16 +165,21 @@ void FreeSpace::findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan)
 	double justMax; // для случая, если вообще не будет inf
 	bool flag; // если нашли начало диапазона inf
 
+	indexStart = -1;
+	indexEnd = -1;
+	targetIndexStart = -1;
+	targetIndexEnd = -1;
 	loopIndexStart = ceil(scan->angle_min / scan->angle_increment);
-	loopIndexEnd = floor(2.0 * M_PI / scan->angle_increment);
+	loopIndexEnd = ceil(scan->angle_max / scan->angle_increment) + 1;
+	justIndex = -1;
 	rangeStart = -1.0;
 	rangeEnd = -1.0;
 	maxRangeStart = -1.0;
 	maxRangeEnd = -1.0;
 	justMax = -1.0;
 	flag = false;
-	ROS_INFO("loopIndexStart = %d", loopIndexStart);
-	ROS_INFO("loopIndexEnd = %d", loopIndexEnd);
+	// ROS_INFO("loopIndexStart = %d", loopIndexStart);
+	// ROS_INFO("loopIndexEnd = %d", loopIndexEnd);
 	for (int i = loopIndexStart; i < loopIndexEnd; i++)
 	{
 		if (scan->ranges[i] >= scan->range_min && scan->ranges[i] <= scan->range_max && scan->ranges[i] > justMax)
@@ -193,7 +218,7 @@ void FreeSpace::findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan)
 		{
 			indexEnd = i;
 			rangeEnd = scan->ranges[indexEnd];
-			if (rangeStart > maxRangeStart && rangeEnd > maxRangeEnd)
+			if (rangeStart + rangeEnd > maxRangeStart + maxRangeEnd)
 			{
 				targetIndexStart = indexStart;
 				targetIndexEnd = indexEnd;
@@ -204,6 +229,9 @@ void FreeSpace::findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan)
 		}
 	}
 	setParamsTargetOrient(targetIndexStart, targetIndexEnd, justIndex, maxRangeStart, maxRangeEnd, flag);
+	ROS_INFO("findFreeSpace ranges");
+	for (int i = 0; i < 360; i++)
+		ROS_INFO("[%d] = %f", i, scan->ranges[i]);
 }
 
 void FreeSpace::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
@@ -214,6 +242,7 @@ void FreeSpace::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 
 	if (flagFirstFreeSpace)
 	{
+		// ROS_INFO("scanCallback flagFirstFreeSpace");
 		findFreeSpace(scan);
 		flagFirstFreeSpace = false;
 	}
@@ -241,7 +270,7 @@ void FreeSpace::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 
 void FreeSpace::startMoving()
 {
-    ros::Rate rate(5000);
+    ros::Rate rate(10);
 
     ROS_INFO("Start moving");
     while (ros::ok())

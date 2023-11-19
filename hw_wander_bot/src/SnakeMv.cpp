@@ -44,6 +44,10 @@ void SnakeMv::stop()
 	geometry_msgs::Twist msg;
 
 	msg.linear.x = 0.0;
+	msg.linear.y = 0.0;
+	msg.linear.z = 0.0;
+	msg.angular.x = 0.0;
+	msg.angular.y = 0.0;
 	msg.angular.z = 0.0;
 	cmdVelPub.publish(msg);
 	sleep(2);
@@ -91,7 +95,6 @@ double SnakeMv::getCurOrient(const gazebo_msgs::ModelStates::ConstPtr& modelStat
 
 void SnakeMv::modelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr& modelStates)
 {
-	ROS_INFO("curOrient = %f", getCurOrient(modelStates));
 	if (isRotation)
 	{
 		initStartOrient(modelStates);
