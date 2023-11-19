@@ -27,7 +27,10 @@ private:
   bool isObstacle;
   bool isRotation;
   bool flagOrient;
+  bool flagFirstFreeSpace;
+  bool directionRotation;
   double startOrient;
+  double targetOrient;
 
   void moveLinear();
   void moveAngular(bool direction);
@@ -35,6 +38,7 @@ private:
   void initStartOrient(const gazebo_msgs::ModelStates::ConstPtr& modelStates);
   void modelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr& modelStates);
   void scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
+  void findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan);
   double getCurOrient(const gazebo_msgs::ModelStates::ConstPtr& modelStates);
 };
 

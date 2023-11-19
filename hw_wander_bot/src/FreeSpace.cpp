@@ -5,7 +5,10 @@ FreeSpace::FreeSpace()
 	isObstacle = true;
 	isRotation = false;
 	flagOrient = false;
+	flagFirstFreeSpace = true;
+	directionRotation = false;
 	startOrient = 0.0;
+	targetOrient = 0.0;
 
     cmdVelPub = node.advertise<geometry_msgs::Twist>("/cmd_vel", 1000);
 
@@ -85,7 +88,7 @@ void FreeSpace::modelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr& mo
 
 		if (curOrient >= 0 && startOrient <= 0 || curOrient <= 0 && startOrient >= 0)
 			deltaOrient = 360.0 - deltaOrient;
-		if (deltaOrient >= ORIENT)
+		if (deltaOrient >= targetOrient)
 		{
 			ROS_INFO("modelStatesCallback isRotation");
 			stop();
@@ -100,61 +103,70 @@ void FreeSpace::findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan)
 	int indexEnd;
 	int targetIndexStart;
 	int targetIndexEnd;
+	int loopIndexStart;
+	int loopIndexEnd;
+	int justIndex;
 	double rangeStart;
 	double rangeEnd;
 	double maxRangeStart;
 	double maxRangeEnd;
+	double justMax;
 	bool flag;
 
+	loopIndexStart = ceil(scan->angle_min / scan->angle_increment);
+	loopIndexEnd = floor(2.0 * M_PI / scan->angle_increment);
 	rangeStart = -1.0;
 	rangeEnd = -1.0;
 	maxRangeStart = -1.0;
 	maxRangeEnd = -1.0;
+	justMax = -1.0;
 	flag = true;
-	if (flagFreeSpace)
+	for (int i = loopIndexStart; i < loopIndexEnd; i++)
 	{
-		int loopStart = ceil(scan->angle_min / scan->angle_increment);
-		int loopEnd = floor(2.0 * M_PI / scan->angle_increment);
-		for (int i = loopStart; i < loopEnd; i++)
+		if (ranges[i] > justMax)
 		{
-			if (ranges[i] == nan)
+			justIndex = i;
+			justMax = ranges[justIndex];
+		}
+		if (ranges[i] == nan)
+		{
+			if (flag)
 			{
-				if (flag)
-				{
-					indexStart = i - 1;
-					rangeStart = scan->ranges[indexStart];
-					flag = false;
-				}
-			}
-			else if (!flag)
-			{
-				indexEnd = i;
-				rangeEnd = scan->ranges[indexEnd];
-				if (rangeStart > maxRangeStart && rangeEnd > maxRangeEnd)
-				{
-					targetIndexStart = indexStart;
-					targetIndexEnd = indexEnd;
-					maxRangeStart = rangeStart;
-					maxRangeEnd = rangeEnd;
-				}
-				flag = true;
+				indexStart = i - 1;
+				rangeStart = scan->ranges[indexStart];
+				flag = false;
 			}
 		}
-		targetOrient = round((targetIndexStart + targetIndexEnd) / 2.0);
-		if (targetOrient < 180.0)
+		else if (!flag)
 		{
-			targetOrient = 180.0 - targetOrient;
-			directionRotation = true;
+			indexEnd = i;
+			rangeEnd = scan->ranges[indexEnd];
+			if (rangeStart > maxRangeStart && rangeEnd > maxRangeEnd)
+			{
+				targetIndexStart = indexStart;
+				targetIndexEnd = indexEnd;
+				maxRangeStart = rangeStart;
+				maxRangeEnd = rangeEnd;
+			}
+			flag = true;
 		}
-		else
-		{
-			targetOrient = 180.0 - (360.0 - targetOrient);
-			directionRotation = false;
-		}
-		flagOrient = true;
-		isRotation = true;
-		flagFreeSpace = false;
 	}
+	if (maxRangeStart == -1.0 || maxRangeEnd = -1.0)
+		targetOrient = justIndex;
+	else
+		targetOrient = (targetIndexStart + targetIndexEnd) / 2.0;
+	if (targetOrient < 180.0)
+	{
+		targetOrient = 180.0 - targetOrient;
+		directionRotation = true;
+	}
+	else
+	{
+		targetOrient = 180.0 - (360.0 - targetOrient);
+		directionRotation = false;
+	}
+	flagOrient = true;
+	isRotation = true;
 }
 
 void FreeSpace::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
@@ -163,8 +175,11 @@ void FreeSpace::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
     int minIndex = ceil((MIN_SCAN_ANGLE - scan->angle_min) / scan->angle_increment);
     int maxIndex = floor((MAX_SCAN_ANGLE - scan->angle_min) / scan->angle_increment);
 
-	findFreeSpace(scan);
-
+	if (flagFirstFreeSpace)
+	{
+		findFreeSpace(scan);
+		flagFirstFreeSpace = false;
+	}
     for (int currIndex = minIndex + 1; currIndex <= maxIndex; currIndex++)
 	{
         if (scan->ranges[currIndex] <= MIN_DIST_FROM_OBSTACLE)
