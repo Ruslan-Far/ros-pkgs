@@ -4,7 +4,6 @@ from geometry_msgs.msg import Twist
 from sensor_msgs.msg import LaserScan
 from gazebo_msgs.msg import ModelStates
 import math
-import time
 
 class SnakeMv:
 	LINEAR_SPEED = 0.1
@@ -72,7 +71,6 @@ class SnakeMv:
 		msg.angular.y = 0
 		msg.angular.z = 0
 		self.cmdVelPub.publish(msg)
-		time.sleep(2)
 
 
 	def initStartPositionXY(self, modelStates):
@@ -138,10 +136,8 @@ class SnakeMv:
 
 	def scanCallback(self, scan):
 		isObstacleInFront = False
-		minIndex = round((self.MIN_SCAN_ANGLE - scan.angle_min) / scan.angle_increment)
-		maxIndex = round((self.MAX_SCAN_ANGLE - scan.angle_min) / scan.angle_increment)
-		print("minIndex =", minIndex)
-		print("maxIndex =", maxIndex)
+		minIndex = math.ceil((self.MIN_SCAN_ANGLE - scan.angle_min) / scan.angle_increment)
+		maxIndex = math.ceil((self.MAX_SCAN_ANGLE - scan.angle_min) / scan.angle_increment)
 		currIndex = minIndex
 
 		while currIndex <= maxIndex:
@@ -170,6 +166,8 @@ class SnakeMv:
 	def startMoving(self):
 		rospy.init_node("snake_mv", anonymous = False)
 		rate = rospy.Rate(5000)
+		
+		print("Start moving")
 		while not rospy.is_shutdown():
 			if not self.isObstacle and not self.isRotation:
 				self.moveLinear()

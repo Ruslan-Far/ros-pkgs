@@ -1,0 +1,7 @@
+<launch>
+    <param name="/use_sim_time" value="true" />
+    
+    <include file="$(find turtlebot3_gazebo)/launch/turtlebot3_house.launch"/>
+
+    <node name="free_space" pkg="hw_wander_bot" type="free_space.py" output="screen"/>
+</launch>
