@@ -12,8 +12,8 @@ class FreeSpace {
 public:
   static constexpr double LINEAR_SPEED = 0.1;
   static constexpr double ANGULAR_SPEED = 0.1;
-  static constexpr double MIN_SCAN_ANGLE = M_PI + (-20.0 / 180 * M_PI);
-  static constexpr double MAX_SCAN_ANGLE = M_PI + (20.0 / 180 * M_PI);
+  static constexpr double MIN_SCAN_ANGLE = M_PI + (-20.0 / 180.0 * M_PI);
+  static constexpr double MAX_SCAN_ANGLE = M_PI + (20.0 / 180.0 * M_PI);
   static constexpr float MIN_DIST_FROM_OBSTACLE = 0.4f;
   
   FreeSpace();

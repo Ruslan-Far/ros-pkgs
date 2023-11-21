@@ -238,15 +238,14 @@ void FreeSpace::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 {
     bool isObstacleInFront = false;
     int minIndex = ceil((MIN_SCAN_ANGLE - scan->angle_min) / scan->angle_increment);
-    int maxIndex = floor((MAX_SCAN_ANGLE - scan->angle_min) / scan->angle_increment);
+    int maxIndex = ceil((MAX_SCAN_ANGLE - scan->angle_min) / scan->angle_increment);
 
 	if (flagFirstFreeSpace)
 	{
-		// ROS_INFO("scanCallback flagFirstFreeSpace");
 		findFreeSpace(scan);
 		flagFirstFreeSpace = false;
 	}
-    for (int currIndex = minIndex + 1; currIndex <= maxIndex; currIndex++)
+    for (int currIndex = minIndex; currIndex <= maxIndex; currIndex++)
 	{
         if (scan->ranges[currIndex] <= MIN_DIST_FROM_OBSTACLE)
 		{
