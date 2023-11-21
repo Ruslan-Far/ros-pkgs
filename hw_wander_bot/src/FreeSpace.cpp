@@ -109,13 +109,13 @@ void FreeSpace::setParamsTargetOrient(int targetIndexStart, int targetIndexEnd, 
 		if (!flag) // вообще нет inf
 		{
 			targetOrient = justIndex;
-			ROS_INFO("setParamsTargetOrient ЕСТЬ");
+			ROS_INFO("setParamsTargetOrient ЕСТЬ justIndex = %d", justIndex);
 		}
 		else // все есть inf
 		{
-			targetOrient = 180.0;
+			targetOrient = 180.0; // default orientation
 			ROS_INFO("setParamsTargetOrient НЕТ");
-		} // default orientation
+		}
 	}
 	else
 	{
@@ -277,7 +277,7 @@ void FreeSpace::startMoving()
 	{
 		if (!isObstacle && !isRotation)
         	moveLinear();
-		else if (isRotation)
+		else if (isRotation && !flagOrient)
 			moveAngular(directionRotation);
         ros::spinOnce();
         rate.sleep();

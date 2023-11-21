@@ -11,7 +11,7 @@
 class SnakeMv {
 public:
   static constexpr double LINEAR_SPEED = 0.1;
-  static constexpr double ANGULAR_SPEED = 0.1;
+  static constexpr double ANGULAR_SPEED = 0.3;
   static constexpr double MIN_SCAN_ANGLE = M_PI + (-20.0 / 180 * M_PI);
   static constexpr double MAX_SCAN_ANGLE = M_PI + (20.0 / 180 * M_PI);
   static constexpr double ORIENT = 90.0;

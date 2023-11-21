@@ -24,6 +24,11 @@ void SnakeMv::moveLinear()
     geometry_msgs::Twist msg;
 
     msg.linear.x = (-1) * LINEAR_SPEED;
+	msg.linear.y = 0.0;
+	msg.linear.z = 0.0;
+	msg.angular.x = 0.0;
+	msg.angular.y = 0.0;
+	msg.angular.z = 0.0;
     cmdVelPub.publish(msg);
 }
 
@@ -31,6 +36,11 @@ void SnakeMv::moveAngular(bool direction)
 {
     geometry_msgs::Twist msg;
 
+	msg.linear.x = 0.0;
+	msg.linear.y = 0.0;
+	msg.linear.z = 0.0;
+	msg.angular.x = 0.0;
+	msg.angular.y = 0.0;
 	if (direction)
     	msg.angular.z = ANGULAR_SPEED;
 	else
@@ -103,6 +113,8 @@ void SnakeMv::modelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr& mode
 
 		if (curOrient >= 0 && startOrient <= 0 || curOrient <= 0 && startOrient >= 0)
 			deltaOrient = 360.0 - deltaOrient;
+		ROS_INFO("modelStatesCallback curOrient = %f", curOrient);
+		ROS_INFO("modelStatesCallback deltaOrient = %f", deltaOrient);
 		if (deltaOrient >= ORIENT)
 		{
 			ROS_INFO("modelStatesCallback isRotation");
@@ -113,13 +125,14 @@ void SnakeMv::modelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr& mode
 			isRotation = false;
 		}
 	}
-	else if (isAfterOddRotation)
+	if (isAfterOddRotation)
 	{
 		initStartPositionXY(modelStates);
 		double currentPositionX = modelStates->pose[2].position.x;
 		double currentPositionY = modelStates->pose[2].position.y;
 		double currentDistShortSide = sqrt(pow(currentPositionX - startPositionX, 2.0) + pow(currentPositionY - startPositionY, 2.0));
 		
+		ROS_INFO("modelStatesCallback currentDistShortSide = %f", currentDistShortSide);
 		if (currentDistShortSide >= DIST_SHORT_SIDE)
 		{
 			ROS_INFO("modelStatesCallback isAfterOddRotation");
@@ -156,6 +169,9 @@ void SnakeMv::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 			isRotation = true;
 			isAfterOddRotation = false;
 			flagPosition = true;
+			ROS_INFO("scanCallback ranges");
+			for (int i = 0; i < 360; i++)
+				ROS_INFO("[%d] = %f", i, scan->ranges[i]);
 		}
     }
 	else
@@ -171,7 +187,7 @@ void SnakeMv::startMoving()
 	{
 		if (!isObstacle && !isRotation)
         	moveLinear();
-		else if (isRotation)
+		else if (isRotation && !flagOrient)
 		{
 			if (numRotation < 2)
 				moveAngular(false);
