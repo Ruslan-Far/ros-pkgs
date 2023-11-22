@@ -39,7 +39,7 @@ private:
   void modelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr& modelStates);
   void scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
   void findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan);
-  void setParamsTargetOrient(int targetIndexStart, int targetIndexEnd, int justIndex, double maxRangeStart, double maxRangeEnd, bool flag);
+  void setParamsTargetOrient(int targetIndexStart, int targetIndexEnd, int justIndex, bool flag);
   double getCurOrient(const gazebo_msgs::ModelStates::ConstPtr& modelStates);
 };
 

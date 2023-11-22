@@ -100,10 +100,9 @@ void FreeSpace::modelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr& mo
 	}
 }
 
-void FreeSpace::setParamsTargetOrient(int targetIndexStart, int targetIndexEnd, int justIndex,
-											double maxRangeStart, double maxRangeEnd, bool flag)
+void FreeSpace::setParamsTargetOrient(int targetIndexStart, int targetIndexEnd, int justIndex, bool flag)
 {
-	if (maxRangeStart == -1.0 && maxRangeEnd == -1.0)
+	if (targetIndexStart == -1.0 && targetIndexEnd == -1.0)
 	{
 		ROS_INFO("setParamsTargetOrient INF ЛИБО ЕСТЬ, ЛИБО НЕТ");
 		if (!flag) // вообще нет inf
@@ -121,7 +120,7 @@ void FreeSpace::setParamsTargetOrient(int targetIndexStart, int targetIndexEnd, 
 	{
 		ROS_INFO("setParamsTargetOrient targetOrient = (targetIndexStart + targetIndexEnd) / 2.0;");
 		targetOrient = (targetIndexStart + targetIndexEnd) / 2.0;
-		if (targetIndexStart >= targetIndexEnd) // если inf находится под индексом 0
+		if (targetIndexStart >= targetIndexEnd) // если inf находится под индексом 0 или крайний диапазон с inf заканчивается под индексом 0
 		{
 			ROS_INFO("setParamsTargetOrient если inf находится под индексом 0");
 			targetOrient = targetOrient + 180.0;
@@ -163,6 +162,7 @@ void FreeSpace::findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan)
 	double maxRangeStart;
 	double maxRangeEnd;
 	double justMax; // для случая, если вообще не будет inf
+	bool isInf;
 	bool flag; // если нашли начало диапазона inf
 
 	indexStart = -1;
@@ -177,15 +177,17 @@ void FreeSpace::findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan)
 	maxRangeStart = -1.0;
 	maxRangeEnd = -1.0;
 	justMax = -1.0;
+	isInf = false;
 	flag = false;
 	for (int i = loopIndexStart; i < loopIndexEnd; i++)
 	{
-		if (scan->ranges[i] >= scan->range_min && scan->ranges[i] <= scan->range_max && scan->ranges[i] > justMax)
+		isInf = !(scan->ranges[i] >= scan->range_min && scan->ranges[i] <= scan->range_max);
+		if (!isInf && scan->ranges[i] > justMax)
 		{
 			justIndex = i;
 			justMax = scan->ranges[justIndex];
 		}
-		if (!(scan->ranges[i] >= scan->range_min && scan->ranges[i] <= scan->range_max))
+		if (isInf)
 		{
 			if (!flag)
 			{
@@ -212,9 +214,12 @@ void FreeSpace::findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan)
 				flag = true;
 			}
 		}
-		else if (flag)
+		if (flag && (!isInf || i + 1 == loopIndexEnd))
 		{
-			indexEnd = i;
+			if (!isInf)
+				indexEnd = i;
+			else
+				indexEnd = loopIndexEnd % 360;
 			rangeEnd = scan->ranges[indexEnd];
 			if (rangeStart + rangeEnd > maxRangeStart + maxRangeEnd)
 			{
@@ -223,22 +228,25 @@ void FreeSpace::findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan)
 				maxRangeStart = rangeStart;
 				maxRangeEnd = rangeEnd;
 			}
+			else if (rangeStart + rangeEnd == maxRangeStart + maxRangeEnd)
+			{
+				double targetDelta = targetIndexEnd - targetIndexStart;
+				double delta = indexEnd - indexStart;
+
+				if (targetDelta < 0)
+					targetDelta = 360 + targetDelta;
+				if (delta < 0)
+					delta = 360 + delta;
+				if (delta > targetDelta)
+				{
+					targetIndexStart = indexStart;
+					targetIndexEnd = indexEnd;
+				}
+			}
 			flag = false;
 		}
 	}
-	if (rangeStart != -1.0 && flag)
-	{
-		indexEnd = loopIndexEnd % 360;
-		rangeEnd = scan->ranges[indexEnd];
-		if (rangeStart + rangeEnd > maxRangeStart + maxRangeEnd)
-		{
-			targetIndexStart = indexStart;
-			targetIndexEnd = indexEnd;
-			maxRangeStart = rangeStart;
-			maxRangeEnd = rangeEnd;
-		}
-	}
-	setParamsTargetOrient(targetIndexStart, targetIndexEnd, justIndex, maxRangeStart, maxRangeEnd, flag);
+	setParamsTargetOrient(targetIndexStart, targetIndexEnd, justIndex, flag);
 	ROS_INFO("findFreeSpace ranges");
 	for (int i = 0; i < 360; i++)
 		ROS_INFO("[%d] = %f", i, scan->ranges[i]);
