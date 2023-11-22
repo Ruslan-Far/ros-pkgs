@@ -109,12 +109,12 @@ void FreeSpace::setParamsTargetOrient(int targetIndexStart, int targetIndexEnd, 
 		if (!flag) // вообще нет inf
 		{
 			targetOrient = justIndex;
-			ROS_INFO("setParamsTargetOrient ЕСТЬ justIndex = %d", justIndex);
+			ROS_INFO("setParamsTargetOrient NO INF justIndex = %d", justIndex);
 		}
 		else // все есть inf
 		{
 			targetOrient = 180.0; // default orientation
-			ROS_INFO("setParamsTargetOrient НЕТ");
+			ROS_INFO("setParamsTargetOrient YES INF");
 		}
 	}
 	else
@@ -138,7 +138,7 @@ void FreeSpace::setParamsTargetOrient(int targetIndexStart, int targetIndexEnd, 
 	}
 	else
 	{
-		targetOrient = 180.0 - (360.0 - targetOrient);
+		targetOrient = targetOrient - 180.0;
 		directionRotation = true;
 		ROS_INFO("setParamsTargetOrient targetOrient = %f", targetOrient);
 		ROS_INFO("setParamsTargetOrient directionRotation = true");
@@ -178,8 +178,6 @@ void FreeSpace::findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan)
 	maxRangeEnd = -1.0;
 	justMax = -1.0;
 	flag = false;
-	// ROS_INFO("loopIndexStart = %d", loopIndexStart);
-	// ROS_INFO("loopIndexEnd = %d", loopIndexEnd);
 	for (int i = loopIndexStart; i < loopIndexEnd; i++)
 	{
 		if (scan->ranges[i] >= scan->range_min && scan->ranges[i] <= scan->range_max && scan->ranges[i] > justMax)
@@ -208,7 +206,7 @@ void FreeSpace::findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan)
 						break;
 					}
 					else
-						loopIndexEnd -= (loopIndexEnd - indexStart);
+						loopIndexEnd = indexStart;
 				}
 				rangeStart = scan->ranges[indexStart];
 				flag = true;
@@ -226,6 +224,18 @@ void FreeSpace::findFreeSpace(const sensor_msgs::LaserScan::ConstPtr& scan)
 				maxRangeEnd = rangeEnd;
 			}
 			flag = false;
+		}
+	}
+	if (rangeStart != -1.0 && flag)
+	{
+		indexEnd = loopIndexEnd % 360;
+		rangeEnd = scan->ranges[indexEnd];
+		if (rangeStart + rangeEnd > maxRangeStart + maxRangeEnd)
+		{
+			targetIndexStart = indexStart;
+			targetIndexEnd = indexEnd;
+			maxRangeStart = rangeStart;
+			maxRangeEnd = rangeEnd;
 		}
 	}
 	setParamsTargetOrient(targetIndexStart, targetIndexEnd, justIndex, maxRangeStart, maxRangeEnd, flag);
@@ -269,7 +279,7 @@ void FreeSpace::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 
 void FreeSpace::startMoving()
 {
-    ros::Rate rate(10);
+    ros::Rate rate(5000);
 
     ROS_INFO("Start moving");
     while (ros::ok())
