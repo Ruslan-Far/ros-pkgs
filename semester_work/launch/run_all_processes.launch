@@ -1,0 +1,7 @@
+<launch>    
+	<node name="map_server" pkg="map_server" type="map_server" args="$(find semester_work)/maps/map.yaml"/>
+	<node name="map_saver" pkg="map_server" type="map_saver" args="-f maps/new_map map:=/new_map"/>
+
+	<node name="node_server" pkg="semester_work" type="node_server"/>
+	<node name="node_client" pkg="semester_work" type="node_client"/>
+</launch>
