@@ -1,3 +1,0 @@
-vector<vector<bool>> grid
----
-vector<vector<bool>> cleanedGrid
