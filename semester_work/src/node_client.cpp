@@ -2,33 +2,31 @@
 #include "nav_msgs/OccupancyGrid.h"
 #include "semester_work/CleanedMap.h"
 // #include <fstream>
-#include <vector>
-
-using namespace std;
 
 ros::NodeHandle nh;
 nav_msgs::OccupancyGrid cleanedMap;
-bool isInitCleanedMap = false;
 
-void duplicate(vector<signed char> dst, vector<signed char> src, int len)
+void duplicateCleanedMap(nav_msgs::OccupancyGrid& cleanedMapFromSrv)
 {
-	for (int i = 0; i < len; i++)
-		dst[i] = src[i];
-}
+	cleanedMap.header.seq = cleanedMapFromSrv.header.seq;
+	cleanedMap.header.stamp = cleanedMapFromSrv.header.stamp;
+	cleanedMap.header.frame_id = cleanedMapFromSrv.header.frame_id;
 
-void fillCleanedMap(const nav_msgs::OccupancyGrid& map, signed char *cleanedData)
-{
-	int currCell;
+	cleanedMap.info.map_load_time = cleanedMapFromSrv.info.map_load_time;
+	cleanedMap.info.resolution = cleanedMapFromSrv.info.resolution;
+	cleanedMap.info.width = cleanedMapFromSrv.info.width;
+	cleanedMap.info.height = cleanedMapFromSrv.info.height;
+	cleanedMap.info.origin.position.x = cleanedMapFromSrv.info.origin.position.x;
+	cleanedMap.info.origin.position.y = cleanedMapFromSrv.info.origin.position.y;
+	cleanedMap.info.origin.position.z = cleanedMapFromSrv.info.origin.position.z;
+	cleanedMap.info.origin.orientation.x = cleanedMapFromSrv.info.origin.orientation.x;
+	cleanedMap.info.origin.orientation.y = cleanedMapFromSrv.info.origin.orientation.y;
+	cleanedMap.info.origin.orientation.z = cleanedMapFromSrv.info.origin.orientation.z;
+	cleanedMap.info.origin.orientation.w = cleanedMapFromSrv.info.origin.orientation.w;
 
-	currCell = 0;
-	cleanedMap.header = map.header;
-	cleanedMap.info = map.info;
-	if (!isInitCleanedMap)
-		isInitCleanedMap = true;
-	else
-		delete [] cleanedMap.data;
-	cleanedMap.data = new signed char[cleanedMap.info.width * cleanedMap.info.height];
-	duplicate(cleanedMap.data, cleanedData, cleanedMap.info.width * cleanedMap.info.height);
+	cleanedMap.data.resize(cleanedMapFromSrv.data.size());
+	for (int i = 0; i < cleanedMap.data.size(); i++)
+		cleanedMap.data[i] = cleanedMapFromSrv.data[i];
 }
 
 void mapCallback(const nav_msgs::OccupancyGrid& map)
@@ -40,21 +38,16 @@ void mapCallback(const nav_msgs::OccupancyGrid& map)
 	{
 		ROS_INFO("Waiting for service cleaned_map to become available");
     }
-	srv.request.width = map.info.width;
-	srv.request.height = map.info.height;
-	srv.request.data = new signed char[map.info.width * map.info.height];
-	srv.response.cleanedData = new signed char[map.info.width * map.info.height];
-	duplicate(srv.request.data, map.data, map.info.width * map.info.height);
+	srv.request.map = map;
 	if (client.call(srv))
 	{
-		fillCleanedMap(map, srv.response.cleanedData);
+		duplicateCleanedMap(srv.response.cleanedMap);
+		// cleanedMap = srv.response.cleanedMap;
 	}
 	else
 	{
 		ROS_ERROR("Failed to call service");
 	}
-	delete [] srv.request.data;
-	delete [] srv.response.cleanedData;
 }
 
 int main(int argc, char** argv)
@@ -71,8 +64,6 @@ int main(int argc, char** argv)
 		ros::spinOnce();
 		rate.sleep();
 	}
-	if (isInitCleanedMap)
-		delete [] cleanedMap.data;
     // if (!requestMap(nh))
     //     exit(-1);
     // printGridToFile();

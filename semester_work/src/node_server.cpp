@@ -7,10 +7,14 @@ using namespace std;
 
 vector<vector<bool>> grid;
 
-void convertToGrid(int rows, int cols, signed char *data)
+void convertToGrid(const nav_msgs::OccupancyGrid& map)
 {
+	int rows;
+	int cols;
 	int currCell;
 
+	rows = map.info.height;
+	cols = map.info.width;
 	currCell = 0;
     grid.resize(rows);
     for (int i = 0; i < rows; i++)
@@ -21,7 +25,7 @@ void convertToGrid(int rows, int cols, signed char *data)
 	{
         for(int j = 0; j < cols; j++)
 		{
-            if (data[currCell] == 0)
+            if (map.data[currCell] == 0)
                 grid[i][j] = false;
             else
                 grid[i][j] = true;
@@ -30,25 +34,38 @@ void convertToGrid(int rows, int cols, signed char *data)
     }
 }
 
-void convertToArray(int rows, int cols, signed char *cleanedData)
+void convertToArray(nav_msgs::OccupancyGrid& cleanedMap)
 {
+	int rows;
+	int cols;
 	int currCell;
 
+	rows = cleanedMap.info.height;
+	cols = cleanedMap.info.width;
 	currCell = 0;
     for (int i = 0; i < rows; i++)
 	{
         for(int j = 0; j < cols; j++)
 		{
-			cleanedData[currCell] = (grid[i][j] ? 1 : 0);
+			cleanedMap.data[currCell] = (grid[i][j] ? 1 : 0);
             currCell++;
         }
     }
 }
 
+void fillCleanedMap(const nav_msgs::OccupancyGrid& map, nav_msgs::OccupancyGrid& cleanedMap)
+{
+	cleanedMap.header = map.header;
+	cleanedMap.info = map.info;
+	cleanedMap.data.resize(cleanedMap.info.width * cleanedMap.info.height);
+	convertToArray(cleanedMap);
+}
+
 bool cleanMap(semester_work::CleanedMap::Request &req, semester_work::CleanedMap::Response &res)
 {
-	convertToGrid(req.height, req.width, req.data);
-	convertToArray(req.height, req.width, res.cleanedData);
+	convertToGrid(req.map);
+	// process
+	fillCleanedMap(req.map, res.cleanedMap);
 	return true;
 }
 
