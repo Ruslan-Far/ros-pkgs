@@ -1,7 +1,6 @@
 #include "ros/ros.h"
 #include "nav_msgs/OccupancyGrid.h"
 #include "semester_work/CleanedMap.h"
-// #include <fstream>
 
 ros::ServiceClient client;
 nav_msgs::OccupancyGrid cleanedMap;
@@ -29,12 +28,11 @@ nav_msgs::OccupancyGrid cleanedMap;
 
 void mapCallback(const nav_msgs::OccupancyGrid& map)
 {
-	semester_work::CleanedMap srv;
-
 	while (!ros::service::waitForService("cleaned_map", ros::Duration(3.0)))
 	{
 		ROS_INFO("Waiting for service cleaned_map to become available");
     }
+	semester_work::CleanedMap srv;
 	srv.request.map = map;
 	if (client.call(srv))
 	{
@@ -76,72 +74,5 @@ int main(int argc, char** argv)
 		ros::spinOnce();
 		rate.sleep();
 	}
-    // if (!requestMap(nh))
-    //     exit(-1);
-    // printGridToFile();
     return 0;
 }
-
-
-
-
-
-
-// void readMap(const nav_msgs::OccupancyGrid& map)
-// {
-//     ROS_INFO("Received a %d X %d map @ %.3f m/px\n", map.info.width, map.info.height, map.info.resolution);
-
-//     rows = map.info.height;
-//     cols = map.info.width;
-//     mapResolution = map.info.resolution;
-
-//     grid.resize(rows); // Dynamically resize the grid
-//     for (int i=0; i<rows; i++) { grid[i].resize(cols); }
-
-//     int currCell = 0;
-//     for (int i=0; i<rows; i++) {
-//         for(int j=0; j<cols; j++) {
-//             if (map.data[currCell] == 0) // unoccupied cell
-//                 grid[i][j] = false;
-//             else
-//                 grid[i][j] = true; //occupied (100) or unknown cell (-1)
-//             currCell++;
-//         }
-//     }
-// }
-
-// bool requestMap(ros::NodeHandle &nh)
-// {
-//     nav_msgs::GetMap::Request req;
-//     nav_msgs::GetMap::Response res;
-
-//     while (!ros::service::waitForService("static_map", ros::Duration(3.0))) {
-//          ROS_INFO("Waiting for service static_map to become available");
-//     }
-
-//     ROS_INFO("Requesting the map...");
-//     ros::ServiceClient mapClient = nh.serviceClient<nav_msgs::GetMap>("static_map");
- 
-//     if (mapClient.call(req, res)) {
-//         readMap(res.map);
-//         return true;
-//     }
-//     else {
-//         ROS_ERROR("Failed to call map service");
-//         return false;
-//     }
-// }
-
-// void printGridToFile() {
-//     ROS_INFO("Print info to file grid.txt");
-//     std::ofstream gridFile;
-//     gridFile.open("grid.txt");
-  
-//     for (int i = grid.size() - 1; i >= 0; i--) {        
-//         for (int j = 0; j < grid[i].size(); j++) {
-//         gridFile << (grid[i][j] ? "1" : "0");           
-//         }
-//         gridFile << endl;
-//     }
-//     gridFile.close();
-// }

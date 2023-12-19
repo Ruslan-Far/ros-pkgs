@@ -47,7 +47,7 @@ void convertToArray(nav_msgs::OccupancyGrid& cleanedMap)
 	{
         for(int j = 0; j < cols; j++)
 		{
-			cleanedMap.data[currCell] = (grid[i][j] ? 1 : 0);
+			cleanedMap.data[currCell] = (grid[i][j] ? 100 : 0);
             currCell++;
         }
     }
