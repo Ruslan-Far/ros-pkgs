@@ -75,7 +75,31 @@ int main(int argc, char **argv)
 	ros::NodeHandle nh;
 	ros::ServiceServer server = nh.advertiseService("cleaned_map", cleanMap);
 
-	ROS_INFO("Ready to clean map");
+	ROS_INFO("SERVER");
+	// vector<int> v1;
+	// vector<int> v2;
+
+	// v1.resize(3);
+	// v1[0] = 2;
+	// v1[1] = 4;
+	// v1[2] = 6;
+
+	// for (int i = 0; i < v1.size(); i++)
+	// 	ROS_INFO("%d", v1[i]);
+	
+	// v2.resize(3);
+	// v2 = v1;
+
+	// for (int i = 0; i < v2.size(); i++)
+	// 	ROS_INFO("%d", v2[i]);
+
+	// v2[1] = 9;
+	// ROS_INFO("-----------------------------------------");
+	// for (int i = 0; i < v1.size(); i++)
+	// 	ROS_INFO("%d", v1[i]);
+	// for (int i = 0; i < v2.size(); i++)
+	// 	ROS_INFO("%d", v2[i]);
+
 	ros::spin();
 	return 0;
 }
