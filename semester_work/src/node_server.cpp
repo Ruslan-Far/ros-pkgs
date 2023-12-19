@@ -17,7 +17,6 @@ void convertToGrid(const nav_msgs::OccupancyGrid& map)
 	cols = map.info.width;
 	currCell = 0;
     grid.resize(rows);
-	ROS_INFO("grid.size = %ld", grid.size());
     for (int i = 0; i < rows; i++)
 	{
 		grid[i].resize(cols);

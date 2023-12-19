@@ -34,20 +34,8 @@ def mapCallback(map, client):
     print("Waiting for service cleaned_map to become available")
     rospy.wait_for_service("cleaned_map", rospy.Duration(33))
     try:
-         global cleanedMap
          res = client(map)
          duplicateCleanedMap(res.cleanedMap)
-        #  cleanedMap = res.cleanedMap
-         print("cleanedMap.info.width =", cleanedMap.info.width)
-         print("srv.response.cleanedMap.info.width =", res.cleanedMap.info.width)
-         res.cleanedMap.info.width = 7
-         print("changed cleanedMap.info.width =", cleanedMap.info.width)
-         print("changed srv.response.cleanedMap.info.width =", res.cleanedMap.info.width)
-         print("cleanedMap.header.seq =", cleanedMap.header.seq)
-         print("srv.response.cleanedMap.header.seq =", res.cleanedMap.header.seq)
-         res.cleanedMap.header.seq = 7
-         print("changed cleanedMap.header.seq =", cleanedMap.header.seq)
-         print("changed srv.response.cleanedMap.header.seq=", res.cleanedMap.header.seq)
     except rospy.ServiceException as e:
         print("Failed to call service")
 
@@ -61,8 +49,6 @@ def run_process():
 
     while not rospy.is_shutdown():
          newMapPub.publish(cleanedMap)
-        #  print(cleanedMap.info.width)
-        #  print("cleanedMap.header.seq =", cleanedMap.header.seq)
          rate.sleep()
 
 
