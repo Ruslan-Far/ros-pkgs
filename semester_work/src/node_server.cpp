@@ -2,6 +2,7 @@
 #include "nav_msgs/OccupancyGrid.h"
 #include "semester_work/CleanedMap.h"
 #include <vector>
+#include <stdio.h>
 
 using namespace std;
 
@@ -61,10 +62,84 @@ void fillCleanedMap(const nav_msgs::OccupancyGrid& map, nav_msgs::OccupancyGrid&
 	convertToArray(cleanedMap);
 }
 
+bool cleanClusterSize1(int i, int j, bool target)
+{
+	for (int ii = i - 1; ii < i + 2; ii++)
+	{
+		for (int jj = j - 1; jj < j + 2; jj++)
+		{
+			if (ii == i && jj == j)
+			{
+				continue;
+			}
+			if (target != grid[ii][jj])
+			{
+				return false;
+			}
+		}
+	}
+	grid[i][j] = target;
+	return true;
+}
+
+bool cleanClusterSize4(int i, int j, bool target)
+{
+	if (i + 2 == grid.size() || j + 2 == grid.size())
+	{
+		return false;
+	}
+	for (int ii = i - 1; ii < i + 3; ii++)
+	{
+		for (int jj = j - 1; jj < j + 3; jj++)
+		{
+			if (ii == i && jj == j || ii == i && jj == j + 1 || ii == i + 1 && jj == j || ii == i + 1 && jj == j + 1)
+			{
+				continue;
+			}
+			if (target != grid[ii][jj])
+			{
+				return false;
+			}
+		}
+	}
+	if (grid[i][j] != target && grid[i][j + 1] != target && grid[i + 1][j] != target && grid[i + 1][j + 1] != target)
+	{
+		grid[i][j] = target;
+		grid[i][j + 1] = target;
+		grid[i + 1][j] = target;
+		grid[i + 1][j + 1] = target;
+		return true;
+	}
+	return false;
+}
+
+void clean()
+{
+	bool target;
+
+	for (int i = 1; i < grid.size() - 1; i++)
+	{
+		target = grid[i][0];
+		for (int j = 1; j < grid[i].size() - 1; j++)
+		{
+			if (target != grid[i][j])
+			{
+				if (!cleanClusterSize1(i, j, target))
+				{
+					if (!cleanClusterSize4(i, j, target))
+					{
+						target = grid[i][j];
+					}
+				}
+			}
+		}
+	}
+}
+
 bool cleanMap(semester_work::CleanedMap::Request &req, semester_work::CleanedMap::Response &res)
 {
 	convertToGrid(req.map);
-	// process
+	clean();
 	fillCleanedMap(req.map, res.cleanedMap);
 	return true;
 }
@@ -76,30 +151,41 @@ int main(int argc, char **argv)
 	ros::ServiceServer server = nh.advertiseService("cleaned_map", cleanMap);
 
 	ROS_INFO("SERVER");
-	// vector<int> v1;
-	// vector<int> v2;
 
-	// v1.resize(3);
-	// v1[0] = 2;
-	// v1[1] = 4;
-	// v1[2] = 6;
-
-	// for (int i = 0; i < v1.size(); i++)
-	// 	ROS_INFO("%d", v1[i]);
+	grid.resize(6);
+	for (int i = 0; i < grid.size(); i++)
+	{
+		grid[i].resize(6);
+	}
+	grid[1][1] = true;
+	for (int i = 0; i < grid.size(); i++)
+	{
+		for (int j = 0; j < grid[i].size(); j++)
+		{
+			printf("%d ", grid[i][j] ? 1 : 0);
+		}
+		printf("\n");
+	}
 	
-	// v2.resize(3);
-	// v2 = v1;
+	
+	
+	
+	
+	clean();
+	
+	
+	
+	
 
-	// for (int i = 0; i < v2.size(); i++)
-	// 	ROS_INFO("%d", v2[i]);
-
-	// v2[1] = 9;
-	// ROS_INFO("-----------------------------------------");
-	// for (int i = 0; i < v1.size(); i++)
-	// 	ROS_INFO("%d", v1[i]);
-	// for (int i = 0; i < v2.size(); i++)
-	// 	ROS_INFO("%d", v2[i]);
-
+	printf("------------------------------------------------------------------\n");
+	for (int i = 0; i < grid.size(); i++)
+	{
+		for (int j = 0; j < grid[i].size(); j++)
+		{
+			printf("%d ", grid[i][j] ? 1 : 0);
+		}
+		printf("\n");
+	}
 	ros::spin();
 	return 0;
 }

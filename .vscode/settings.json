@@ -12,6 +12,9 @@
 		"initializer_list": "cpp",
 		"cmath": "cpp",
 		"map": "cpp",
-		"*.tcc": "cpp"
+		"*.tcc": "cpp",
+		"functional": "cpp",
+		"bitset": "cpp",
+		"utility": "cpp"
 	}
 }
