@@ -204,40 +204,66 @@ int main(int argc, char **argv)
 
 	ROS_INFO("SERVER");
 
-	grid.resize(6);
-	for (int i = 0; i < grid.size(); i++)
-	{
-		grid[i].resize(6);
-	}
-	grid[1][1] = true;
-	for (int i = 0; i < grid.size(); i++)
-	{
-		for (int j = 0; j < grid[i].size(); j++)
-		{
-			printf("%d ", grid[i][j] ? 1 : 0);
-		}
-		printf("\n");
-	}
+	// grid.resize(6);
+	// for (int i = 0; i < grid.size(); i++)
+	// {
+	// 	grid[i].resize(6);
+	// }
+	// grid[1][1] = true;
+	// grid[0][1] = true;
+	// grid[1][2] = true;
+	// grid[0][3] = true;
+	// grid[1][3] = true;
+	// grid[2][3] = true;
+	// grid[0][4] = true;
+	// grid[2][4] = true;
+	// grid[0][5] = true;
+	// grid[1][5] = true;
+	// grid[2][5] = true;
+
+
+	// grid[2][1] = true;
+	// grid[1][2] = true;
+	// grid[2][2] = true;
+	// grid[3][3] = true;
+	// grid[4][4] = true;
+	// grid[5][5] = true;
+	// grid[4][3] = true;
+	// grid[5][3] = true;
+	// grid[4][4] = true;
+	// grid[4][5] = true;
+	// grid[5][4] = true;
+	// grid[3][4] = true;
+	// grid[2][4] = true;
+
+	// for (int i = 0; i < grid.size(); i++)
+	// {
+	// 	for (int j = 0; j < grid[i].size(); j++)
+	// 	{
+	// 		printf("%d ", grid[i][j] ? 1 : 0);
+	// 	}
+	// 	printf("\n");
+	// }
 	
 	
 	
 	
 	
-	clean();
+	// clean();
 	
 	
 	
 	
 
-	printf("------------------------------------------------------------------\n");
-	for (int i = 0; i < grid.size(); i++)
-	{
-		for (int j = 0; j < grid[i].size(); j++)
-		{
-			printf("%d ", grid[i][j] ? 1 : 0);
-		}
-		printf("\n");
-	}
+	// printf("------------------------------------------------------------------\n");
+	// for (int i = 0; i < grid.size(); i++)
+	// {
+	// 	for (int j = 0; j < grid[i].size(); j++)
+	// 	{
+	// 		printf("%d ", grid[i][j] ? 1 : 0);
+	// 	}
+	// 	printf("\n");
+	// }
 	ros::spin();
 	return 0;
 }
