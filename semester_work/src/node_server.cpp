@@ -82,6 +82,56 @@ bool cleanClusterSize1(int i, int j, bool target)
 	return true;
 }
 
+bool cleanClusterSizeHor2(int i, int j, bool target)
+{
+	if (j + 2 == grid.size())
+	{
+		return false;
+	}
+	for (int ii = i - 1; ii < i + 2; ii++)
+	{
+		for (int jj = j - 1; jj < j + 3; jj++)
+		{
+			if (ii == i && jj == j || ii == i && jj == j + 1)
+			{
+				continue;
+			}
+			if (target != grid[ii][jj])
+			{
+				return false;
+			}
+		}
+	}
+	grid[i][j] = target;
+	grid[i][j + 1] = target;
+	return true;
+}
+
+bool cleanClusterSizeVer2(int i, int j, bool target)
+{
+	if (i + 2 == grid.size())
+	{
+		return false;
+	}
+	for (int ii = i - 1; ii < i + 3; ii++)
+	{
+		for (int jj = j - 1; jj < j + 2; jj++)
+		{
+			if (ii == i && jj == j || ii == i + 1 && jj == j)
+			{
+				continue;
+			}
+			if (target != grid[ii][jj])
+			{
+				return false;
+			}
+		}
+	}
+	grid[i][j] = target;
+	grid[i + 1][j] = target;
+	return true;
+}
+
 bool cleanClusterSize4(int i, int j, bool target)
 {
 	if (i + 2 == grid.size() || j + 2 == grid.size())
@@ -102,15 +152,11 @@ bool cleanClusterSize4(int i, int j, bool target)
 			}
 		}
 	}
-	if (grid[i][j] != target && grid[i][j + 1] != target && grid[i + 1][j] != target && grid[i + 1][j + 1] != target)
-	{
-		grid[i][j] = target;
-		grid[i][j + 1] = target;
-		grid[i + 1][j] = target;
-		grid[i + 1][j + 1] = target;
-		return true;
-	}
-	return false;
+	grid[i][j] = target;
+	grid[i][j + 1] = target;
+	grid[i + 1][j] = target;
+	grid[i + 1][j + 1] = target;
+	return true;
 }
 
 void clean()
@@ -126,9 +172,15 @@ void clean()
 			{
 				if (!cleanClusterSize1(i, j, target))
 				{
-					if (!cleanClusterSize4(i, j, target))
+					if (!cleanClusterSizeHor2(i, j, target))
 					{
-						target = grid[i][j];
+						if (!cleanClusterSizeVer2(i, j, target))
+						{
+							if (!cleanClusterSize4(i, j, target))
+							{
+								target = grid[i][j];
+							}
+						}
 					}
 				}
 			}
